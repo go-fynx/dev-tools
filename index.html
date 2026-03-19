@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Lightweight dev tools: UUID generator, epoch and timezone converter. Client-side only, no API calls.">
+  <title>Dev Tools | UUID, Epoch & Timezone Utilities</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <h1>Dev Tools</h1>
+    <p class="page-subtitle">Lightweight, client-side developer utilities. No API calls, no tracking.</p>
+
+    <div class="landing-grid">
+      <a href="uuid/index.html" class="tool-card">
+        <h2>UUID Generator & Converter</h2>
+        <p>Generate UUID v4/v1, convert between string and UUID formats. Copy to clipboard with one click.</p>
+      </a>
+      <a href="epoch-converter/index.html" class="tool-card">
+        <h2>Epoch & Timezone Converter</h2>
+        <p>View current time (UTC), convert between timezones, and convert epoch timestamps to human-readable dates.</p>
+      </a>
+    </div>
+  </div>
+
+  <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark/light mode">🌙</button>
+
+  <script src="js/shared.js"></script>
+  <script>
+    initTheme();
+    const themeBtn = document.getElementById('theme-toggle');
+    themeBtn.addEventListener('click', () => {
+      const next = toggleTheme();
+      themeBtn.textContent = next === 'dark' ? '🌙' : '☀️';
+    });
+    themeBtn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '🌙' : '☀️';
+  </script>
+</body>
+</html>

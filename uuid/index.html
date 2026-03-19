@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Generate UUID v4/v1 and convert between string and UUID formats.">
+  <title>UUID Generator & Converter | Dev Tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="nav-breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Dev Tools</a>
+      <span aria-hidden="true">/</span>
+      <span>UUID</span>
+    </nav>
+
+    <h1>UUID Utility</h1>
+    <p class="page-subtitle">Generate random UUIDs or convert between string and UUID formats.</p>
+
+    <div role="tablist" class="tab-list" aria-label="UUID tools">
+      <button type="button" role="tab" aria-selected="true" aria-controls="panel-generate" id="tab-generate" class="tab-btn">Generate UUID</button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-converter" id="tab-converter" class="tab-btn">UUID Converter</button>
+    </div>
+
+    <!-- Tab 1: Generate UUID -->
+    <div role="tabpanel" id="panel-generate" class="tab-panel" aria-hidden="false" aria-labelledby="tab-generate">
+      <section class="section">
+        <h2 class="section-title">Generate UUID</h2>
+
+        <div class="form-group toggle-group">
+          <div class="toggle-item">
+            <input type="radio" id="uuid-v4" name="uuid-version" value="v4" checked>
+            <label for="uuid-v4">UUID v4 (random)</label>
+          </div>
+          <div class="toggle-item">
+            <input type="radio" id="uuid-v1" name="uuid-version" value="v1">
+            <label for="uuid-v1">UUID v1 (timestamp)</label>
+          </div>
+        </div>
+
+        <div class="form-group toggle-group">
+          <div class="toggle-item">
+            <input type="checkbox" id="auto-generate" aria-describedby="auto-desc">
+            <label for="auto-generate">Auto-generate every 2 seconds</label>
+          </div>
+        </div>
+        <p id="auto-desc" class="validation-msg" style="margin-top: 0; color: var(--text-muted); font-size: 0.8rem;">Optional: automatically generate a new UUID periodically.</p>
+
+        <div class="btn-group" style="margin-top: 1rem;">
+          <button type="button" id="btn-generate" class="btn btn-primary">Generate UUID</button>
+        </div>
+
+        <div class="form-group output-row" style="margin-top: 1rem;">
+          <input type="text" id="output-uuid" readonly placeholder="Generated UUID will appear here" aria-label="Generated UUID">
+          <button type="button" id="btn-copy-generate" class="btn btn-secondary copy-btn" aria-label="Copy UUID">Copy</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tab 2: UUID Converter -->
+    <div role="tabpanel" id="panel-converter" class="tab-panel" aria-hidden="true" aria-labelledby="tab-converter">
+      <section class="section">
+        <h2 class="section-title">UUID Converter</h2>
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">
+          <strong>String → UUID:</strong> Creates a deterministic UUID v5 from any string (namespace-based).<br>
+          <strong>UUID → String:</strong> Validates and returns canonical format (lowercase with hyphens).
+        </p>
+
+        <div class="form-group">
+          <label for="converter-input">Input (string or UUID)</label>
+          <input type="text" id="converter-input" placeholder="Enter string or UUID" aria-describedby="converter-validation">
+        </div>
+
+        <div id="converter-validation" class="validation-msg" role="status" aria-live="polite"></div>
+
+        <div class="btn-group" style="margin-top: 1rem;">
+          <button type="button" id="btn-string-to-uuid" class="btn btn-primary">String → UUID</button>
+          <button type="button" id="btn-uuid-to-string" class="btn btn-secondary">UUID → String</button>
+        </div>
+
+        <div class="form-group output-row" style="margin-top: 1rem;">
+          <input type="text" id="converter-output" readonly placeholder="Result will appear here" aria-label="Conversion result">
+          <button type="button" id="btn-copy-converter" class="btn btn-secondary copy-btn" aria-label="Copy result">Copy</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark/light mode">🌙</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/uuid@9/dist/umd/uuid.min.js"></script>
+  <script src="../js/shared.js"></script>
+  <script src="../js/uuid.js"></script>
+  <script>
+    (function() {
+      // Theme
+      initTheme();
+      const themeBtn = document.getElementById('theme-toggle');
+      themeBtn.addEventListener('click', () => {
+        const next = toggleTheme();
+        themeBtn.textContent = next === 'dark' ? '🌙' : '☀️';
+      });
+      themeBtn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '🌙' : '☀️';
+
+      // Tab switching
+      const tabs = document.querySelectorAll('[role="tab"]');
+      const panels = document.querySelectorAll('[role="tabpanel"]');
+      function activateTab(index) {
+        tabs.forEach((t, i) => {
+          t.setAttribute('aria-selected', i === index);
+          panels[i].setAttribute('aria-hidden', i !== index);
+        });
+      }
+
+      tabs.forEach((tab, i) => {
+        tab.addEventListener('click', () => activateTab(i));
+        tab.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowRight' && i < tabs.length - 1) {
+            e.preventDefault();
+            activateTab(i + 1);
+            tabs[i + 1].focus();
+          } else if (e.key === 'ArrowLeft' && i > 0) {
+            e.preventDefault();
+            activateTab(i - 1);
+            tabs[i - 1].focus();
+          }
+        });
+      });
+
+      // Generate UUID
+      const btnGenerate = document.getElementById('btn-generate');
+      const outputUuid = document.getElementById('output-uuid');
+      const btnCopyGenerate = document.getElementById('btn-copy-generate');
+      const autoGenerate = document.getElementById('auto-generate');
+
+      let autoInterval = null;
+
+      function doGenerate() {
+        const version = document.querySelector('input[name="uuid-version"]:checked').value;
+        const uuid = version === 'v1' ? generateUUIDv1() : generateUUIDv4();
+        outputUuid.value = uuid;
+      }
+
+      btnGenerate.addEventListener('click', doGenerate);
+
+      autoGenerate.addEventListener('change', () => {
+        if (autoGenerate.checked) {
+          doGenerate();
+          autoInterval = setInterval(doGenerate, 2000);
+        } else {
+          clearInterval(autoInterval);
+          autoInterval = null;
+        }
+      });
+
+      btnCopyGenerate.addEventListener('click', async () => {
+        const text = outputUuid.value;
+        if (!text) return;
+        const ok = await copyToClipboard(text);
+        showCopyFeedback(btnCopyGenerate, ok ? 'Copied!' : 'Failed', 1500);
+      });
+
+      // Converter
+      const converterInput = document.getElementById('converter-input');
+      const converterOutput = document.getElementById('converter-output');
+      const converterValidation = document.getElementById('converter-validation');
+      const btnStringToUuid = document.getElementById('btn-string-to-uuid');
+      const btnUuidToString = document.getElementById('btn-uuid-to-string');
+      const btnCopyConverter = document.getElementById('btn-copy-converter');
+
+      function clearValidation() {
+        converterValidation.textContent = '';
+        converterValidation.className = 'validation-msg';
+      }
+
+      btnStringToUuid.addEventListener('click', () => {
+        clearValidation();
+        const input = converterInput.value.trim();
+        if (!input) {
+          converterValidation.textContent = 'Please enter a string.';
+          converterValidation.classList.add('error');
+          return;
+        }
+        const result = stringToUUID(input);
+        if (result) {
+          converterOutput.value = result;
+          converterValidation.textContent = 'Created deterministic UUID v5 from input.';
+          converterValidation.classList.add('success');
+        } else {
+          converterValidation.textContent = 'UUID library not loaded.';
+          converterValidation.classList.add('error');
+        }
+      });
+
+      btnUuidToString.addEventListener('click', () => {
+        clearValidation();
+        const input = converterInput.value.trim();
+        if (!input) {
+          converterValidation.textContent = 'Please enter a UUID.';
+          converterValidation.classList.add('error');
+          return;
+        }
+        const result = uuidToString(input);
+        if (result) {
+          converterOutput.value = result;
+          converterValidation.textContent = 'Valid UUID. Canonical format displayed.';
+          converterValidation.classList.add('success');
+        } else {
+          converterValidation.textContent = 'Invalid UUID format. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+          converterValidation.classList.add('error');
+        }
+      });
+
+      btnCopyConverter.addEventListener('click', async () => {
+        const text = converterOutput.value;
+        if (!text) return;
+        const ok = await copyToClipboard(text);
+        showCopyFeedback(btnCopyConverter, ok ? 'Copied!' : 'Failed', 1500);
+      });
+
+      // Debounced validation on input
+      converterInput.addEventListener('input', debounce(() => {
+        const input = converterInput.value.trim();
+        if (!input) {
+          clearValidation();
+          return;
+        }
+        if (isValidUUID(input)) {
+          converterValidation.textContent = 'Valid UUID format.';
+          converterValidation.className = 'validation-msg success';
+        } else {
+          converterValidation.textContent = '';
+          converterValidation.className = 'validation-msg';
+        }
+      }, 300));
+
+      // Initial generate
+      doGenerate();
+    })();
+  </script>
+</body>
+</html>
