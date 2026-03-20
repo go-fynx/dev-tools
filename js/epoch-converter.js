@@ -211,40 +211,6 @@ function parseFlexibleDate(text) {
 }
 
 /**
- * @param {number} secondsTotal
- * @returns {{ years: number, months: number, days: number, hours: number, minutes: number, seconds: number, note: string }}
- */
-function secondsToDurationParts(secondsTotal) {
-  const secPerMin = 60;
-  const secPerHour = 3600;
-  const secPerDay = 86400;
-  const avgMonth = 30.436875 * secPerDay;
-  const avgYear = 365.25 * secPerDay;
-
-  let s = Math.abs(secondsTotal);
-  const years = Math.floor(s / avgYear);
-  s -= years * avgYear;
-  const months = Math.floor(s / avgMonth);
-  s -= months * avgMonth;
-  const days = Math.floor(s / secPerDay);
-  s -= days * secPerDay;
-  const hours = Math.floor(s / secPerHour);
-  s -= hours * secPerHour;
-  const minutes = Math.floor(s / secPerMin);
-  s -= minutes * secPerMin;
-
-  return {
-    years,
-    months,
-    days,
-    hours,
-    minutes,
-    seconds: Math.round(s * 1000) / 1000,
-    note: 'Months and years use ~30.436875 d/month and ~365.25 d/year (approximate).',
-  };
-}
-
-/**
  * @param {Date} day - Any instant on the calendar day (local interpretation for picker)
  * @param {'year'|'month'|'day'} kind
  * @returns {{ start: Date, end: Date }}

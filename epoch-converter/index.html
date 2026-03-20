@@ -272,12 +272,13 @@
       </section>
 
       <section class="section">
-        <h2 class="section-title">Duration converter — seconds → breakdown</h2>
+        <h2 class="section-title">Go-style duration (nanoseconds → human)</h2>
+        <p class="fine-print">Same unit as Go <code>time.Duration</code> (int64 nanoseconds). Underscores allowed. Examples: <code>996320000</code> → 996.32 ms; <code>2000000000</code> → 2 sec.</p>
         <div class="form-group">
-          <label for="duration-input">Duration (seconds)</label>
-          <input type="text" id="duration-input" inputmode="decimal" placeholder="e.g. 90061 or -3600">
+          <label for="duration-input">Nanoseconds</label>
+          <input type="text" id="duration-input" inputmode="numeric" placeholder="e.g. 996320000 or 3723000000000 (1 hr 2 min 3 sec)">
         </div>
-        <button type="button" id="btn-duration" class="btn btn-primary">Break down</button>
+        <button type="button" id="btn-duration" class="btn btn-primary">Format</button>
         <div id="duration-out" class="duration-out" style="margin-top: 1rem;"></div>
       </section>
 
@@ -436,6 +437,7 @@
   <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark/light mode">🌙</button>
 
   <script src="../js/shared.js"></script>
+  <script src="../js/format-go-duration.js"></script>
   <script src="../js/epoch-converter.js"></script>
   <script src="../js/epoch-converter-page.js"></script>
   <script>

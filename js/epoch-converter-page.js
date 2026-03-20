@@ -322,24 +322,18 @@
 
   function bindDuration() {
     const btn = $('btn-duration');
-    if (!btn) return;
+    const out = $('duration-out');
+    if (!btn || !out) return;
     btn.addEventListener('click', () => {
       const raw = $('duration-input').value.trim();
-      const n = Number(raw);
-      if (!Number.isFinite(n)) {
-        $('duration-out').textContent = 'Invalid number.';
+      const r = tryFormatDurationNanoseconds(raw);
+      if (!r.ok) {
+        out.innerHTML = `<span class="validation-msg error">${escapeHtml(r.error)}</span>`;
         return;
       }
-      const parts = secondsToDurationParts(n);
-      const sign = n < 0 ? '-' : '';
-      $('duration-out').innerHTML =
-        `<p><strong>${sign}${parts.years}</strong> y, ` +
-        `<strong>${parts.months}</strong> mo, ` +
-        `<strong>${parts.days}</strong> d, ` +
-        `<strong>${parts.hours}</strong> h, ` +
-        `<strong>${parts.minutes}</strong> min, ` +
-        `<strong>${parts.seconds}</strong> s</p>` +
-        `<p class="fine-print">${parts.note}</p>`;
+      out.innerHTML =
+        `<p class="mono-out duration-result"><strong>${escapeHtml(r.text)}</strong></p>` +
+        '<p class="fine-print">Input is nanoseconds (Go <code>time.Duration</code>). Reusable API: <code>formatDurationNanoseconds(ns)</code> in <code>js/format-go-duration.js</code>.</p>';
     });
   }
 
