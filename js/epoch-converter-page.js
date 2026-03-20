@@ -101,14 +101,14 @@
 
     const epS = $('epoch-live-seconds');
     const epMs = $('epoch-live-ms');
-    if (epS) epS.textContent = String(Math.floor(now.getTime() / 1000));
-    if (epMs) epMs.textContent = String(now.getTime());
+    if (epS) epS.value = String(Math.floor(now.getTime() / 1000));
+    if (epMs) epMs.value = String(now.getTime());
   }
 
   function tickMsOnly() {
     const now = new Date();
     const epMs = $('epoch-live-ms');
-    if (epMs) epMs.textContent = String(now.getTime());
+    if (epMs) epMs.value = String(now.getTime());
   }
 
   function clearAllForms() {
@@ -522,8 +522,8 @@
       $('btn-clear-all').addEventListener('click', () => clearAllForms());
 
     [
-      ['btn-copy-live-s', () => $('epoch-live-seconds').textContent],
-      ['btn-copy-live-ms', () => $('epoch-live-ms').textContent],
+      ['btn-copy-live-s', () => $('epoch-live-seconds').value],
+      ['btn-copy-live-ms', () => $('epoch-live-ms').value],
     ].forEach(([id, fn]) => {
       const b = $(id);
       if (!b) return;
