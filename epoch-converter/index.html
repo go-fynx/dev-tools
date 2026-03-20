@@ -3,294 +3,457 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Convert epoch timestamps, view current time, and convert between timezones.">
-  <title>Epoch & Timezone Converter | Dev Tools</title>
+  <meta name="description" content="Unix epoch converter, live clock, timezones, batch and specialized timestamp formats — client-side.">
+  <title>Epoch & Time Converter | Dev Tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
-  <div class="app-shell">
+  <div class="app-shell app-shell-wide" id="epoch-hub">
     <nav class="nav-breadcrumb" aria-label="Breadcrumb">
       <a href="../index.html">Dev Tools</a>
       <span aria-hidden="true">/</span>
       <span>Epoch Converter</span>
     </nav>
 
-    <h1>Epoch & Timezone Converter</h1>
-    <p class="page-subtitle">View current time, convert between timezones, and convert epoch timestamps.</p>
+    <h1>Epoch & time converter</h1>
+    <p class="page-subtitle">Unix timestamp ↔ human date, live UTC clock, IANA timezones, batch and common specialist encodings. All runs in your browser.</p>
 
-    <!-- Section 1: Current Time -->
-    <section class="section">
-      <h2 class="section-title">Current Time (UTC)</h2>
-      <div class="clock-grid">
-        <div class="clock-item">
-          <div class="analog-clock" id="analog-clock" aria-hidden="true">
-            <div class="clock-hand hour" id="hand-hour"></div>
-            <div class="clock-hand minute" id="hand-minute"></div>
-            <div class="clock-hand second" id="hand-second"></div>
+    <div class="tab-list" role="tablist" aria-label="Converter sections">
+      <button type="button" class="tab-btn" role="tab" data-tab-target="core" aria-selected="true">Core</button>
+      <button type="button" class="tab-btn" role="tab" data-tab-target="utilities" aria-selected="false">Utilities</button>
+      <button type="button" class="tab-btn" role="tab" data-tab-target="more" aria-selected="false">More formats</button>
+      <button type="button" class="tab-btn" role="tab" data-tab-target="about" aria-selected="false">Help</button>
+    </div>
+
+    <!-- ========== Core ========== -->
+    <div class="tab-panel" data-tab-panel="core" role="tabpanel" aria-hidden="false">
+      <section class="section">
+        <h2 class="section-title">Current time (UTC)</h2>
+        <div class="clock-grid">
+          <div class="clock-item">
+            <div class="analog-clock" id="analog-clock" aria-hidden="true">
+              <div class="clock-hand hour" id="hand-hour"></div>
+              <div class="clock-hand minute" id="hand-minute"></div>
+              <div class="clock-hand second" id="hand-second"></div>
+            </div>
+            <div class="clock-label">Analog (UTC)</div>
           </div>
-          <div class="clock-label">Analog (UTC)</div>
+          <div class="clock-item">
+            <div class="clock-label">12-hour</div>
+            <div class="clock-value" id="time-12h">--:--:-- --</div>
+          </div>
+          <div class="clock-item">
+            <div class="clock-label">24-hour</div>
+            <div class="clock-value" id="time-24h">--:--:--</div>
+          </div>
+          <div class="clock-item">
+            <div class="clock-label">Timezone</div>
+            <div class="clock-value" style="font-size: 1rem;" id="tz-label">UTC</div>
+          </div>
         </div>
-        <div class="clock-item">
-          <div class="clock-label">12-hour</div>
-          <div class="clock-value" id="time-12h">--:--:-- --</div>
+        <div class="epoch-live-grid">
+          <div class="form-group">
+            <label>Live Unix time (UTC) — seconds</label>
+            <div class="output-row">
+              <input type="text" id="epoch-live-seconds" readonly class="mono-out" aria-live="polite">
+              <button type="button" id="btn-copy-live-s" class="btn btn-secondary copy-btn">Copy</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Live Unix time (UTC) — milliseconds</label>
+            <div class="output-row">
+              <input type="text" id="epoch-live-ms" readonly class="mono-out" aria-live="polite">
+              <button type="button" id="btn-copy-live-ms" class="btn btn-secondary copy-btn">Copy</button>
+            </div>
+          </div>
         </div>
-        <div class="clock-item">
-          <div class="clock-label">24-hour</div>
-          <div class="clock-value" id="time-24h">--:--:--</div>
-        </div>
-        <div class="clock-item">
-          <div class="clock-label">Timezone</div>
-          <div class="clock-value" style="font-size: 1rem;" id="tz-label">UTC</div>
-        </div>
-      </div>
-    </section>
+        <p class="fine-print">Milliseconds update ~10× per second for smoother copy of “now”.</p>
+      </section>
 
-    <!-- Section 2: Timezone Converter -->
-    <section class="section">
-      <h2 class="section-title">Timezone Converter</h2>
-      <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">
-        Convert current UTC time to any timezone.
-      </p>
-      <div class="form-group">
-        <label for="tz-select">Select timezone</label>
-        <select id="tz-select" aria-label="Timezone selector">
-          <option value="UTC">UTC</option>
-          <!-- Populated by JS -->
-        </select>
-      </div>
-      <button type="button" id="btn-convert-tz" class="btn btn-primary">Convert Time</button>
-      <div class="clock-grid" id="tz-result" style="margin-top: 1rem; display: none;">
-        <div class="clock-item">
-          <div class="clock-label">12-hour</div>
-          <div class="clock-value" id="tz-time-12">--</div>
+      <section class="section">
+        <h2 class="section-title">Preferences</h2>
+        <p class="fine-print">Stored in localStorage. Affects formatted clocks below.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pref-locale">Locale (date/time language)</label>
+            <select id="pref-locale">
+              <option value="en-US">English (US)</option>
+              <option value="en-GB">English (UK)</option>
+              <option value="de-DE">Deutsch</option>
+              <option value="fr-FR">Français</option>
+              <option value="ja-JP">日本語</option>
+            </select>
+          </div>
+          <div class="form-group flex-align-end">
+            <label class="checkbox-label">
+              <input type="checkbox" id="pref-hour12" checked>
+              Prefer 12-hour clock in “12-hour” fields
+            </label>
+          </div>
         </div>
-        <div class="clock-item">
-          <div class="clock-label">24-hour</div>
-          <div class="clock-value" id="tz-time-24">--</div>
-        </div>
-        <div class="clock-item">
-          <div class="clock-label">Date</div>
-          <div class="clock-value" style="font-size: 1rem;" id="tz-date">--</div>
-        </div>
-      </div>
-      <div class="output-row" style="margin-top: 1rem;">
-        <input type="text" id="tz-output-copy" readonly style="flex: 1;" aria-label="Converted time for copy">
-        <button type="button" id="btn-copy-tz" class="btn btn-secondary copy-btn">Copy</button>
-      </div>
-    </section>
+      </section>
 
-    <!-- Section 3: Epoch Converter -->
-    <section class="section">
-      <h2 class="section-title">Epoch → Human-readable</h2>
-      <div class="form-group">
-        <label for="epoch-input">Epoch timestamp</label>
-        <input type="text" id="epoch-input" inputmode="numeric" placeholder="e.g. 1710864000 or 1710864000000" aria-describedby="epoch-validation">
-      </div>
-      <div class="form-group toggle-group">
-        <div class="toggle-item">
-          <input type="radio" id="epoch-seconds" name="epoch-unit" value="seconds" checked>
-          <label for="epoch-seconds">Seconds</label>
+      <section class="section">
+        <h2 class="section-title">Timezone converter</h2>
+        <p class="fine-print">Convert <strong>current instant</strong> to any IANA timezone (via <code>Intl</code>).</p>
+        <div class="form-group">
+          <label for="tz-select">Timezone</label>
+          <select id="tz-select" aria-label="Timezone selector"></select>
         </div>
-        <div class="toggle-item">
-          <input type="radio" id="epoch-ms" name="epoch-unit" value="ms">
-          <label for="epoch-ms">Milliseconds</label>
+        <button type="button" id="btn-convert-tz" class="btn btn-primary">Convert time</button>
+        <div class="clock-grid" id="tz-result" style="margin-top: 1rem; display: none;">
+          <div class="clock-item">
+            <div class="clock-label">12-hour</div>
+            <div class="clock-value" id="tz-time-12">--</div>
+          </div>
+          <div class="clock-item">
+            <div class="clock-label">24-hour</div>
+            <div class="clock-value" id="tz-time-24">--</div>
+          </div>
+          <div class="clock-item">
+            <div class="clock-label">Date</div>
+            <div class="clock-value" style="font-size: 1rem;" id="tz-date">--</div>
+          </div>
+          <div class="clock-item">
+            <div class="clock-label">ISO (UTC instant)</div>
+            <div class="clock-value" style="font-size: 0.85rem;" id="tz-iso">--</div>
+          </div>
         </div>
-      </div>
-      <div class="form-group">
-        <label for="epoch-tz">Display timezone</label>
-        <select id="epoch-tz">
-          <option value="UTC">UTC</option>
-        </select>
-      </div>
-      <button type="button" id="btn-epoch-convert" class="btn btn-primary">Convert</button>
-      <div id="epoch-validation" class="validation-msg" role="status" aria-live="polite"></div>
-      <div class="output-row" style="margin-top: 1rem;">
-        <input type="text" id="epoch-output" readonly placeholder="Human-readable date" aria-label="Converted date">
-        <button type="button" id="btn-copy-epoch" class="btn btn-secondary copy-btn">Copy</button>
-      </div>
-    </section>
+        <div class="output-row" style="margin-top: 1rem;">
+          <input type="text" id="tz-output-copy" readonly aria-label="Converted time for copy">
+          <button type="button" id="btn-copy-tz" class="btn btn-secondary copy-btn">Copy</button>
+        </div>
+      </section>
 
-    <!-- Section 4: Date → Epoch -->
-    <section class="section">
-      <h2 class="section-title">Human-readable → Epoch</h2>
-      <div class="form-group">
-        <label for="date-input">Date & time</label>
-        <input type="datetime-local" id="date-input" aria-describedby="date-epoch-output">
-      </div>
-      <div class="form-group toggle-group">
-        <div class="toggle-item">
-          <input type="radio" id="date-seconds" name="date-epoch-unit" value="seconds" checked>
-          <label for="date-seconds">Output in seconds</label>
+      <section class="section">
+        <h2 class="section-title">Epoch → human-readable</h2>
+        <div class="form-group">
+          <label for="epoch-input">Timestamp</label>
+          <input type="text" id="epoch-input" inputmode="numeric" placeholder="e.g. 1710864000, 996322350 (pick unit below)" aria-describedby="epoch-validation">
         </div>
-        <div class="toggle-item">
-          <input type="radio" id="date-ms" name="date-epoch-unit" value="ms">
-          <label for="date-ms">Output in milliseconds</label>
+        <fieldset class="toggle-group">
+          <legend class="sr-only">Unit</legend>
+          <div class="toggle-item">
+            <input type="radio" id="epoch-seconds" name="epoch-unit" value="seconds" checked>
+            <label for="epoch-seconds">Seconds</label>
+          </div>
+          <div class="toggle-item">
+            <input type="radio" id="epoch-ms" name="epoch-unit" value="ms">
+            <label for="epoch-ms">Milliseconds</label>
+          </div>
+          <div class="toggle-item">
+            <input type="radio" id="epoch-us" name="epoch-unit" value="us">
+            <label for="epoch-us">Microseconds</label>
+          </div>
+          <div class="toggle-item">
+            <input type="radio" id="epoch-ns" name="epoch-unit" value="ns">
+            <label for="epoch-ns">Nanoseconds</label>
+          </div>
+        </fieldset>
+        <div class="form-group">
+          <label for="epoch-tz">Also show in timezone</label>
+          <select id="epoch-tz"></select>
         </div>
-      </div>
-      <button type="button" id="btn-date-to-epoch" class="btn btn-primary">Convert to Epoch</button>
-      <div class="output-row" style="margin-top: 1rem;">
-        <input type="text" id="date-epoch-output" readonly placeholder="Epoch timestamp" aria-label="Epoch result">
-        <button type="button" id="btn-copy-date-epoch" class="btn btn-secondary copy-btn">Copy</button>
-      </div>
-    </section>
+        <button type="button" id="btn-epoch-convert" class="btn btn-primary">Convert</button>
+        <div id="epoch-validation" class="validation-msg" role="status" aria-live="polite"></div>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label for="epoch-output-utc">UTC (human-readable)</label>
+          <div class="output-row">
+            <input type="text" id="epoch-output-utc" readonly>
+            <button type="button" id="btn-copy-epoch-utc" class="btn btn-secondary copy-btn">Copy</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="epoch-output-tz">Selected timezone</label>
+          <div class="output-row">
+            <input type="text" id="epoch-output-tz" readonly>
+            <button type="button" id="btn-copy-epoch-tz" class="btn btn-secondary copy-btn">Copy</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="epoch-output-iso">ISO 8601 (UTC)</label>
+          <div class="output-row">
+            <input type="text" id="epoch-output-iso" readonly>
+            <button type="button" id="btn-copy-epoch-iso" class="btn btn-secondary copy-btn">Copy</button>
+          </div>
+        </div>
+        <p class="fine-print">Integer µs/ns beyond millisecond precision show a note after the ISO string. Fractional µs/ns use floating conversion.</p>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Human-readable → epoch</h2>
+        <div class="form-group">
+          <label for="date-text-input">Text date (optional)</label>
+          <input type="text" id="date-text-input" placeholder="ISO 8601, RFC 2822, e.g. Mon, 15 Jan 2024 10:00:00 GMT">
+        </div>
+        <div class="form-group">
+          <label for="date-input">Or datetime picker (local)</label>
+          <input type="datetime-local" id="date-input">
+        </div>
+        <fieldset class="toggle-group">
+          <legend class="sr-only">Output unit</legend>
+          <div class="toggle-item">
+            <input type="radio" id="date-out-sec" name="date-epoch-unit" value="seconds" checked>
+            <label for="date-out-sec">Seconds</label>
+          </div>
+          <div class="toggle-item">
+            <input type="radio" id="date-out-ms" name="date-epoch-unit" value="ms">
+            <label for="date-out-ms">Milliseconds</label>
+          </div>
+          <div class="toggle-item">
+            <input type="radio" id="date-out-us" name="date-epoch-unit" value="us">
+            <label for="date-out-us">Microseconds</label>
+          </div>
+          <div class="toggle-item">
+            <input type="radio" id="date-out-ns" name="date-epoch-unit" value="ns">
+            <label for="date-out-ns">Nanoseconds</label>
+          </div>
+        </fieldset>
+        <button type="button" id="btn-date-to-epoch" class="btn btn-primary">Convert to epoch</button>
+        <div id="date-epoch-validation" class="validation-msg" role="status" aria-live="polite"></div>
+        <div class="output-row" style="margin-top: 1rem;">
+          <input type="text" id="date-epoch-output" readonly placeholder="Epoch value" aria-label="Epoch result">
+          <button type="button" id="btn-copy-date-epoch" class="btn btn-secondary copy-btn">Copy</button>
+        </div>
+        <p class="fine-print">If the text field is non-empty, it takes precedence over the picker (after <code>Date.parse</code> normalization).</p>
+      </section>
+    </div>
+
+    <!-- ========== Utilities ========== -->
+    <div class="tab-panel" data-tab-panel="utilities" role="tabpanel" aria-hidden="true">
+      <section class="section">
+        <h2 class="section-title">Period boundaries (UTC calendar)</h2>
+        <p class="fine-print">Uses the calendar day you pick in local terms, then start/end instants in UTC for that Y-M-D.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="period-date">Date</label>
+            <input type="date" id="period-date">
+          </div>
+          <div class="form-group">
+            <label for="period-kind">Period</label>
+            <select id="period-kind">
+              <option value="day">Day</option>
+              <option value="month">Month</option>
+              <option value="year">Year</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="period-tz">Display timezone</label>
+            <select id="period-tz"></select>
+          </div>
+          <div class="form-group">
+            <label for="period-unit">Epoch output unit</label>
+            <select id="period-unit">
+              <option value="seconds">Seconds</option>
+              <option value="ms">Milliseconds</option>
+              <option value="us">Microseconds</option>
+              <option value="ns">Nanoseconds</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" id="btn-period" class="btn btn-primary">Compute</button>
+        <div class="period-results" style="margin-top: 1rem;">
+          <p><strong>Start</strong> <span id="period-start-human"></span></p>
+          <div class="output-row">
+            <input type="text" id="period-start-epoch" readonly>
+            <button type="button" id="btn-copy-period-start" class="btn btn-secondary copy-btn">Copy</button>
+          </div>
+          <p><strong>End</strong> <span id="period-end-human"></span></p>
+          <div class="output-row">
+            <input type="text" id="period-end-epoch" readonly>
+            <button type="button" id="btn-copy-period-end" class="btn btn-secondary copy-btn">Copy</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Seconds → duration breakdown</h2>
+        <div class="form-group">
+          <label for="duration-input">Duration (seconds)</label>
+          <input type="text" id="duration-input" inputmode="decimal" placeholder="e.g. 90061 or -3600">
+        </div>
+        <button type="button" id="btn-duration" class="btn btn-primary">Break down</button>
+        <div id="duration-out" class="duration-out" style="margin-top: 1rem;"></div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Batch converter</h2>
+        <p class="fine-print">One timestamp per line. Lines starting with <code>#</code> are skipped. Single unit for all lines.</p>
+        <div class="form-group">
+          <label for="batch-unit">Unit</label>
+          <select id="batch-unit">
+            <option value="seconds">Seconds</option>
+            <option value="ms">Milliseconds</option>
+            <option value="us">Microseconds</option>
+            <option value="ns">Nanoseconds</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="batch-input">Input</label>
+          <textarea id="batch-input" rows="8" placeholder="1710864000&#10;1710867600"></textarea>
+        </div>
+        <button type="button" id="btn-batch" class="btn btn-primary">Convert all</button>
+        <div id="batch-output-wrap" style="margin-top: 1rem;"></div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Timestamp list (month)</h2>
+        <p class="fine-print">Generates epoch seconds and ISO UTC per step for one calendar month (UTC).</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="list-year">Year</label>
+            <input type="number" id="list-year" min="1970" max="2100" value="2024">
+          </div>
+          <div class="form-group">
+            <label for="list-month">Month (1–12)</label>
+            <input type="number" id="list-month" min="1" max="12" value="1">
+          </div>
+          <div class="form-group">
+            <label for="list-step">Step</label>
+            <select id="list-step">
+              <option value="daily">Daily</option>
+              <option value="hourly">Hourly</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" id="btn-list-gen" class="btn btn-primary">Generate</button>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label for="list-output">Output (csv: seconds,iso)</label>
+          <textarea id="list-output" rows="10" readonly></textarea>
+        </div>
+        <button type="button" id="btn-list-copy" class="btn btn-secondary">Copy output</button>
+      </section>
+    </div>
+
+    <!-- ========== More formats ========== -->
+    <div class="tab-panel" data-tab-panel="more" role="tabpanel" aria-hidden="true">
+      <section class="section">
+        <h2 class="section-title">Windows FILETIME / LDAP (100 ns since 1601-01-01 UTC)</h2>
+        <p class="fine-print">Integer string (no spaces). Formula: <code>unix_ms = floor(filetime/10000) - 11644473600000</code>.</p>
+        <div class="output-row">
+          <input type="text" id="spec-filetime" placeholder="e.g. 133200000000000000">
+          <button type="button" id="btn-spec-filetime" class="btn btn-primary">To UTC</button>
+        </div>
+        <p id="spec-filetime-out" class="spec-out mono-out"></p>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Chrome / WebKit (microseconds since 1601-01-01 UTC)</h2>
+        <p class="fine-print">Same instant as FILETIME × 10 in 100-ns units — here input is <strong>microseconds</strong> (FILETIME ÷ 10).</p>
+        <div class="output-row">
+          <input type="text" id="spec-webkit" placeholder="BigInt as string">
+          <button type="button" id="btn-spec-webkit" class="btn btn-primary">To UTC</button>
+        </div>
+        <p id="spec-webkit-out" class="spec-out mono-out"></p>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Cocoa / Core Data (seconds since 2001-01-01 00:00:00 UTC)</h2>
+        <div class="output-row">
+          <input type="text" id="spec-cocoa" inputmode="decimal" placeholder="e.g. 568021800.0">
+          <button type="button" id="btn-spec-cocoa" class="btn btn-primary">To UTC</button>
+        </div>
+        <p id="spec-cocoa-out" class="spec-out mono-out"></p>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Excel / OLE automation (serial days)</h2>
+        <p class="fine-print">Days since 1899-12-30 UTC. Does not emulate Excel’s 1900 leap bug; treats serial as continuous.</p>
+        <div class="output-row">
+          <input type="text" id="spec-oa" inputmode="decimal" placeholder="e.g. 45321.5">
+          <button type="button" id="btn-spec-oa" class="btn btn-primary">To UTC</button>
+        </div>
+        <p id="spec-oa-out" class="spec-out mono-out"></p>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Julian day (UT)</h2>
+        <div class="output-row">
+          <input type="text" id="spec-jd" inputmode="decimal" placeholder="e.g. 2460123.5">
+          <button type="button" id="btn-spec-jd" class="btn btn-primary">To UTC</button>
+        </div>
+        <p id="spec-jd-out" class="spec-out mono-out"></p>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Unix epoch (hex)</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="spec-hex-mode">Interpret as</label>
+            <select id="spec-hex-mode">
+              <option value="seconds">Seconds (×1000 → ms)</option>
+              <option value="ms">Milliseconds</option>
+            </select>
+          </div>
+        </div>
+        <div class="output-row">
+          <input type="text" id="spec-hex" placeholder="0x or plain hex">
+          <button type="button" id="btn-spec-hex" class="btn btn-primary">To UTC</button>
+        </div>
+        <p id="spec-hex-out" class="spec-out mono-out"></p>
+      </section>
+    </div>
+
+    <!-- ========== About / Help ========== -->
+    <div class="tab-panel" data-tab-panel="about" role="tabpanel" aria-hidden="true">
+      <section class="section">
+        <h2 class="section-title">Year 2038 (32-bit signed seconds)</h2>
+        <p id="y2038-countdown" class="mono-out" aria-live="polite"></p>
+        <p class="fine-print">Signed 32-bit <code>time_t</code> in seconds overflows after <code>2038-01-19T03:14:07Z</code>. Many systems now use 64-bit.</p>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Reference (seconds)</h2>
+        <table class="data-table">
+          <thead><tr><th>Human</th><th>Seconds</th></tr></thead>
+          <tbody>
+            <tr><td>1 hour</td><td>3,600</td></tr>
+            <tr><td>1 day</td><td>86,400</td></tr>
+            <tr><td>1 week</td><td>604,800</td></tr>
+            <tr><td>~1 month (30.44 d)</td><td>2,629,743</td></tr>
+            <tr><td>~1 year (365.25 d)</td><td>31,556,926</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section disclaimer-box">
+        <h2 class="section-title">Disclaimer</h2>
+        <p class="fine-print">This page uses your device clock and JavaScript <code>Date</code> / <code>Intl</code>. <strong>Leap seconds</strong> are not modeled. Browsers may apply <strong>current DST rules</strong> to some historical instants. Sub-millisecond display is limited by the JS date type; µs/ns integers show a remainder note where needed.</p>
+        <p class="fine-print">Press <kbd>C</kbd> outside inputs to clear many fields (see tooltips in code). Use <strong>Clear forms</strong> below for safety.</p>
+      </section>
+    </div>
+
+    <div class="btn-group sticky-actions">
+      <button type="button" id="btn-clear-all" class="btn btn-secondary">Clear forms</button>
+    </div>
   </div>
 
   <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark/light mode">🌙</button>
 
   <script src="../js/shared.js"></script>
   <script src="../js/epoch-converter.js"></script>
+  <script src="../js/epoch-converter-page.js"></script>
   <script>
-    (function() {
-      const DEFAULT_TZ = 'UTC';
-
-      // Theme
+    (function () {
       initTheme();
       const themeBtn = document.getElementById('theme-toggle');
-      themeBtn.addEventListener('click', () => {
-        const next = toggleTheme();
-        themeBtn.textContent = next === 'dark' ? '🌙' : '☀️';
-      });
-      themeBtn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '🌙' : '☀️';
-
-      // Populate timezone dropdowns (lazy)
-      function populateTimezones() {
-        const tzList = getTimezones();
-        const tzSelect = document.getElementById('tz-select');
-        const epochTz = document.getElementById('epoch-tz');
-        const options = tzList.map(tz => `<option value="${tz}">${tz}</option>`).join('');
-        tzSelect.innerHTML = options;
-        epochTz.innerHTML = options;
+      if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+          const next = toggleTheme();
+          themeBtn.textContent = next === 'dark' ? '🌙' : '☀️';
+        });
+        themeBtn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '🌙' : '☀️';
       }
-      populateTimezones();
-
-      // Section 1: Current time (auto-update every second)
-      function updateCurrentTime() {
-        const now = new Date();
-        const fmt = formatInTimezone(now, DEFAULT_TZ);
-        document.getElementById('time-12h').textContent = fmt.time12;
-        document.getElementById('time-24h').textContent = fmt.time24;
-        document.getElementById('tz-label').textContent = DEFAULT_TZ;
-
-        // Analog clock
-        const sec = now.getUTCSeconds();
-        const min = now.getUTCMinutes();
-        const hour = now.getUTCHours() % 12;
-        const secDeg = (sec / 60) * 360;
-        const minDeg = (min / 60) * 360 + (sec / 60) * 6;
-        const hourDeg = (hour / 12) * 360 + (min / 60) * 30;
-        document.getElementById('hand-second').style.transform = `rotate(${secDeg}deg)`;
-        document.getElementById('hand-minute').style.transform = `rotate(${minDeg}deg)`;
-        document.getElementById('hand-hour').style.transform = `rotate(${hourDeg}deg)`;
+      const pd = document.getElementById('period-date');
+      if (pd) {
+        const n = new Date();
+        pd.value = n.toISOString().slice(0, 10);
       }
-      updateCurrentTime();
-      setInterval(updateCurrentTime, 1000);
-
-      // Section 2: Timezone converter
-      const btnConvertTz = document.getElementById('btn-convert-tz');
-      const tzSelect = document.getElementById('tz-select');
-      const tzResult = document.getElementById('tz-result');
-      const btnCopyTz = document.getElementById('btn-copy-tz');
-
-      btnConvertTz.addEventListener('click', () => {
-        const tz = tzSelect.value;
-        const now = new Date();
-        const fmt = formatInTimezone(now, tz);
-        document.getElementById('tz-time-12').textContent = fmt.time12;
-        document.getElementById('tz-time-24').textContent = fmt.time24;
-        document.getElementById('tz-date').textContent = fmt.date;
-        document.getElementById('tz-output-copy').value = `${fmt.date} ${fmt.time24} (${tz})`;
-        tzResult.style.display = 'grid';
-      });
-
-      btnCopyTz.addEventListener('click', async () => {
-        const text = document.getElementById('tz-output-copy').value;
-        if (!text) return;
-        const ok = await copyToClipboard(text);
-        showCopyFeedback(btnCopyTz, ok ? 'Copied!' : 'Failed', 1500);
-      });
-
-      // Section 3: Epoch → Date
-      const epochInput = document.getElementById('epoch-input');
-      const btnEpochConvert = document.getElementById('btn-epoch-convert');
-      const epochValidation = document.getElementById('epoch-validation');
-      const epochOutput = document.getElementById('epoch-output');
-      const btnCopyEpoch = document.getElementById('btn-copy-epoch');
-
-      btnEpochConvert.addEventListener('click', () => {
-        const raw = epochInput.value.trim();
-        const isMs = document.querySelector('input[name="epoch-unit"]:checked').value === 'ms';
-        const tz = document.getElementById('epoch-tz').value;
-
-        if (!raw) {
-          epochValidation.textContent = 'Please enter an epoch timestamp.';
-          epochValidation.className = 'validation-msg error';
-          return;
-        }
-
-        const num = Number(raw);
-        if (!Number.isFinite(num)) {
-          epochValidation.textContent = 'Invalid number.';
-          epochValidation.className = 'validation-msg error';
-          return;
-        }
-
-        const date = epochToDate(num, isMs);
-        if (isNaN(date.getTime())) {
-          epochValidation.textContent = 'Invalid date (out of range).';
-          epochValidation.className = 'validation-msg error';
-          return;
-        }
-
-        const fmt = formatInTimezone(date, tz);
-        const result = `${fmt.date} ${fmt.time24} (${tz})`;
-        epochOutput.value = result;
-        epochValidation.textContent = 'Converted successfully.';
-        epochValidation.className = 'validation-msg success';
-      });
-
-      btnCopyEpoch.addEventListener('click', async () => {
-        const text = epochOutput.value;
-        if (!text) return;
-        const ok = await copyToClipboard(text);
-        showCopyFeedback(btnCopyEpoch, ok ? 'Copied!' : 'Failed', 1500);
-      });
-
-      // Section 4: Date → Epoch
-      const dateInput = document.getElementById('date-input');
-      const btnDateToEpoch = document.getElementById('btn-date-to-epoch');
-      const dateEpochOutput = document.getElementById('date-epoch-output');
-      const btnCopyDateEpoch = document.getElementById('btn-copy-date-epoch');
-
-      function toLocalDateTimeString(d) {
-        const pad = n => String(n).padStart(2, '0');
-        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-      }
-      dateInput.value = toLocalDateTimeString(new Date());
-
-      btnDateToEpoch.addEventListener('click', () => {
-        const dateStr = dateInput.value;
-        if (!dateStr) {
-          dateEpochOutput.value = '';
-          return;
-        }
-        const date = new Date(dateStr);
-        const isMs = document.querySelector('input[name="date-epoch-unit"]:checked').value === 'ms';
-        const epoch = dateToEpoch(date, isMs);
-        dateEpochOutput.value = String(epoch);
-      });
-
-      btnCopyDateEpoch.addEventListener('click', async () => {
-        const text = dateEpochOutput.value;
-        if (!text) return;
-        const ok = await copyToClipboard(text);
-        showCopyFeedback(btnCopyDateEpoch, ok ? 'Copied!' : 'Failed', 1500);
-      });
-
-      // Auto-convert on date change
-      dateInput.addEventListener('change', () => btnDateToEpoch.click());
     })();
   </script>
 </body>
