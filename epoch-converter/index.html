@@ -74,6 +74,96 @@
       </section>
 
       <section class="section">
+        <h2 class="section-title">Current time (this device)</h2>
+        <p class="fine-print">Wall clock in your browser’s local timezone. Unix epoch below is the same instant as UTC above.</p>
+        <div class="clock-grid">
+          <div class="clock-item">
+            <div class="analog-clock" id="analog-clock-local" aria-hidden="true">
+              <div class="clock-hand hour" id="hand-hour-local"></div>
+              <div class="clock-hand minute" id="hand-minute-local"></div>
+              <div class="clock-hand second" id="hand-second-local"></div>
+            </div>
+            <div class="clock-label">Analog (local)</div>
+          </div>
+          <div class="clock-item">
+            <div class="clock-label">12-hour</div>
+            <div class="clock-value" id="time-local-12h">--:--:-- --</div>
+          </div>
+          <div class="clock-item">
+            <div class="clock-label">24-hour</div>
+            <div class="clock-value" id="time-local-24h">--:--:--</div>
+          </div>
+          <div class="clock-item">
+            <div class="clock-label">Timezone</div>
+            <div class="clock-value" style="font-size: 1rem;" id="tz-local-label">—</div>
+          </div>
+        </div>
+        <div class="epoch-live-grid">
+          <div class="form-group">
+            <label>Live Unix time — seconds (same instant)</label>
+            <div class="output-row">
+              <input type="text" id="epoch-live-seconds-local" readonly class="mono-out" aria-live="polite">
+              <button type="button" id="btn-copy-live-s-local" class="btn btn-secondary copy-btn">Copy</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Live Unix time — milliseconds (same instant)</label>
+            <div class="output-row">
+              <input type="text" id="epoch-live-ms-local" readonly class="mono-out" aria-live="polite">
+              <button type="button" id="btn-copy-live-ms-local" class="btn btn-secondary copy-btn">Copy</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Time alerts</h2>
+        <p class="fine-print">Browser / OS notifications while this tab stays open. <strong>UTC</strong> column uses UTC clock; <strong>Local</strong> uses your device timezone. Hourly fires at minute 0; daily alarm fires once per calendar day at the chosen time.</p>
+        <div class="form-group">
+          <button type="button" id="btn-alert-permission" class="btn btn-primary">Allow notifications</button>
+          <p id="alert-permission-status" class="fine-print" role="status" style="margin-top: 0.5rem;"></p>
+        </div>
+        <div class="form-row">
+          <fieldset class="form-group" style="margin: 0; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem;">
+            <legend class="section-title" style="font-size: 0.95rem; padding: 0 0.35rem;">UTC</legend>
+            <label class="checkbox-label" style="display: block; margin-bottom: 0.75rem;">
+              <input type="checkbox" id="alert-utc-on">
+              Enable UTC alerts
+            </label>
+            <div class="form-group">
+              <label for="alert-utc-mode">When to notify</label>
+              <select id="alert-utc-mode">
+                <option value="hourly">Every hour at :00 UTC</option>
+                <option value="alarm">Daily at a UTC time (alarm)</option>
+              </select>
+            </div>
+            <div class="form-group" id="alert-utc-time-wrap" hidden>
+              <label for="alert-utc-time">Time (interpreted as UTC)</label>
+              <input type="time" id="alert-utc-time" step="60" value="09:00">
+            </div>
+          </fieldset>
+          <fieldset class="form-group" style="margin: 0; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem;">
+            <legend class="section-title" style="font-size: 0.95rem; padding: 0 0.35rem;">Local (device)</legend>
+            <label class="checkbox-label" style="display: block; margin-bottom: 0.75rem;">
+              <input type="checkbox" id="alert-local-on">
+              Enable local alerts
+            </label>
+            <div class="form-group">
+              <label for="alert-local-mode">When to notify</label>
+              <select id="alert-local-mode">
+                <option value="hourly">Every hour at :00 local</option>
+                <option value="alarm">Daily at a local time (alarm)</option>
+              </select>
+            </div>
+            <div class="form-group" id="alert-local-time-wrap" hidden>
+              <label for="alert-local-time">Time (device timezone)</label>
+              <input type="time" id="alert-local-time" step="60" value="09:00">
+            </div>
+          </fieldset>
+        </div>
+      </section>
+
+      <section class="section">
         <h2 class="section-title">Preferences</h2>
         <p class="fine-print">Stored in localStorage. Affects formatted clocks below.</p>
         <div class="form-row">

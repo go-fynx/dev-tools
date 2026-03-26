@@ -5,6 +5,10 @@
   'use strict';
 
   const PREFS_KEY = 'epoch-converter-prefs';
+  const ALERT_PREFS_KEY = 'epoch-converter-alerts';
+
+  /** @type {{ utcHour: string, utcAlarm: string, localHour: string, localAlarm: string }} */
+  let alertDedupe = { utcHour: '', utcAlarm: '', localHour: '', localAlarm: '' };
 
   /** @returns {{ locale: string, hour12: boolean }} */
   function loadPrefs() {
@@ -76,6 +80,25 @@
     });
   }
 
+  function getLocalTimeZoneId() {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'local';
+    } catch {
+      return 'local';
+    }
+  }
+
+  function formatLocalTzLabel(now) {
+    const id = getLocalTimeZoneId();
+    try {
+      const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: 'shortOffset' }).formatToParts(now);
+      const tzPart = parts.find((p) => p.type === 'timeZoneName');
+      return tzPart && tzPart.value ? `${id} · ${tzPart.value}` : id;
+    } catch {
+      return id;
+    }
+  }
+
   function tickClocks() {
     const now = new Date();
     const utc = 'UTC';
@@ -101,14 +124,264 @@
 
     const epS = $('epoch-live-seconds');
     const epMs = $('epoch-live-ms');
-    if (epS) epS.value = String(Math.floor(now.getTime() / 1000));
-    if (epMs) epMs.value = String(now.getTime());
+    const secStr = String(Math.floor(now.getTime() / 1000));
+    const msStr = String(now.getTime());
+    if (epS) epS.value = secStr;
+    if (epMs) epMs.value = msStr;
+
+    const localTz = getLocalTimeZoneId();
+    const fmtLocal = formatAll(now, localTz);
+    const l12 = $('time-local-12h');
+    const l24 = $('time-local-24h');
+    if (l12) l12.textContent = fmtLocal.time12;
+    if (l24) l24.textContent = fmtLocal.time24;
+    const tzLoc = $('tz-local-label');
+    if (tzLoc) tzLoc.textContent = formatLocalTzLabel(now);
+
+    const secL = now.getSeconds();
+    const minL = now.getMinutes();
+    const hourL = now.getHours() % 12;
+    const secDegL = (secL / 60) * 360;
+    const minDegL = (minL / 60) * 360 + (secL / 60) * 6;
+    const hourDegL = (hourL / 12) * 360 + (minL / 60) * 30;
+    const hsl = $('hand-second-local');
+    const hml = $('hand-minute-local');
+    const hhl = $('hand-hour-local');
+    if (hsl) hsl.style.transform = `rotate(${secDegL}deg)`;
+    if (hml) hml.style.transform = `rotate(${minDegL}deg)`;
+    if (hhl) hhl.style.transform = `rotate(${hourDegL}deg)`;
+
+    const epSL = $('epoch-live-seconds-local');
+    const epMsL = $('epoch-live-ms-local');
+    if (epSL) epSL.value = secStr;
+    if (epMsL) epMsL.value = msStr;
   }
 
   function tickMsOnly() {
     const now = new Date();
+    const msStr = String(now.getTime());
     const epMs = $('epoch-live-ms');
-    if (epMs) epMs.value = String(now.getTime());
+    if (epMs) epMs.value = msStr;
+    const epMsL = $('epoch-live-ms-local');
+    if (epMsL) epMsL.value = msStr;
+    checkAlerts(now);
+  }
+
+  /**
+   * @param {string} timeVal - HTML time value "HH:MM"
+   * @returns {{ h: number, m: number }}
+   */
+  function parseAlertTime(timeVal) {
+    const s = String(timeVal || '').trim();
+    const m = /^(\d{1,2}):(\d{2})$/.exec(s);
+    if (!m) return { h: 9, m: 0 };
+    const h = Number(m[1]);
+    const min = Number(m[2]);
+    if (!Number.isFinite(h) || !Number.isFinite(min)) return { h: 9, m: 0 };
+    return { h: Math.min(23, Math.max(0, h)), m: Math.min(59, Math.max(0, min)) };
+  }
+
+  function fireNotification(title, body) {
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission !== 'granted') return;
+    try {
+      new Notification(title, { body });
+    } catch (_) {}
+  }
+
+  function checkAlerts(now) {
+    const utcOn = $('alert-utc-on') && $('alert-utc-on').checked;
+    const localOn = $('alert-local-on') && $('alert-local-on').checked;
+    if (!utcOn && !localOn) return;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+
+    const uy = now.getUTCFullYear();
+    const umo = now.getUTCMonth();
+    const ud = now.getUTCDate();
+    const uh = now.getUTCHours();
+    const um = now.getUTCMinutes();
+    const us = now.getUTCSeconds();
+
+    if (utcOn) {
+      const mode = $('alert-utc-mode') && $('alert-utc-mode').value;
+      if (mode === 'hourly') {
+        if (um === 0 && us === 0) {
+          const key = `u-h-${uy}-${umo}-${ud}-${uh}`;
+          if (key !== alertDedupe.utcHour) {
+            alertDedupe.utcHour = key;
+            fireNotification('Epoch converter — UTC', `Top of the hour (${String(uh).padStart(2, '0')}:00 UTC).`);
+          }
+        }
+      } else {
+        const { h: th, m: tm } = parseAlertTime($('alert-utc-time') && $('alert-utc-time').value);
+        if (uh === th && um === tm && us === 0) {
+          const key = `u-a-${uy}-${umo}-${ud}`;
+          if (key !== alertDedupe.utcAlarm) {
+            alertDedupe.utcAlarm = key;
+            fireNotification(
+              'Epoch converter — UTC alarm',
+              `Daily UTC time reached: ${String(th).padStart(2, '0')}:${String(tm).padStart(2, '0')}.`
+            );
+          }
+        }
+      }
+    }
+
+    const ly = now.getFullYear();
+    const lmo = now.getMonth();
+    const ld = now.getDate();
+    const lh = now.getHours();
+    const lm = now.getMinutes();
+    const ls = now.getSeconds();
+
+    if (localOn) {
+      const mode = $('alert-local-mode') && $('alert-local-mode').value;
+      if (mode === 'hourly') {
+        if (lm === 0 && ls === 0) {
+          const key = `l-h-${ly}-${lmo}-${ld}-${lh}`;
+          if (key !== alertDedupe.localHour) {
+            alertDedupe.localHour = key;
+            fireNotification(
+              'Epoch converter — local',
+              `Top of the hour (${String(lh).padStart(2, '0')}:00 ${getLocalTimeZoneId()}).`
+            );
+          }
+        }
+      } else {
+        const { h: th, m: tm } = parseAlertTime($('alert-local-time') && $('alert-local-time').value);
+        if (lh === th && lm === tm && ls === 0) {
+          const key = `l-a-${ly}-${lmo}-${ld}`;
+          if (key !== alertDedupe.localAlarm) {
+            alertDedupe.localAlarm = key;
+            fireNotification(
+              'Epoch converter — local alarm',
+              `Daily local time reached: ${String(th).padStart(2, '0')}:${String(tm).padStart(2, '0')} (${getLocalTimeZoneId()}).`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  function updateAlertTimeVisibility() {
+    const utcMode = $('alert-utc-mode');
+    const locMode = $('alert-local-mode');
+    const uw = $('alert-utc-time-wrap');
+    const lw = $('alert-local-time-wrap');
+    if (uw) uw.hidden = !utcMode || utcMode.value !== 'alarm';
+    if (lw) lw.hidden = !locMode || locMode.value !== 'alarm';
+  }
+
+  function refreshAlertPermissionStatus() {
+    const el = $('alert-permission-status');
+    if (!el) return;
+    if (typeof Notification === 'undefined') {
+      el.textContent = 'Notifications are not supported in this context (use HTTPS or localhost).';
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      el.textContent = 'Notifications are allowed.';
+    } else if (Notification.permission === 'denied') {
+      el.textContent = 'Notifications are blocked. Change site permissions in the browser to enable.';
+    } else {
+      el.textContent = 'Click “Allow notifications” so hourly and alarm alerts can appear.';
+    }
+  }
+
+  /** @returns {{ utcOn: boolean, utcMode: string, utcTime: string, localOn: boolean, localMode: string, localTime: string }} */
+  function loadAlertPrefs() {
+    try {
+      const raw = localStorage.getItem(ALERT_PREFS_KEY);
+      if (!raw) {
+        return {
+          utcOn: false,
+          utcMode: 'hourly',
+          utcTime: '09:00',
+          localOn: false,
+          localMode: 'hourly',
+          localTime: '09:00',
+        };
+      }
+      const p = JSON.parse(raw);
+      return {
+        utcOn: !!p.utcOn,
+        utcMode: p.utcMode === 'alarm' ? 'alarm' : 'hourly',
+        utcTime: typeof p.utcTime === 'string' && p.utcTime ? p.utcTime : '09:00',
+        localOn: !!p.localOn,
+        localMode: p.localMode === 'alarm' ? 'alarm' : 'hourly',
+        localTime: typeof p.localTime === 'string' && p.localTime ? p.localTime : '09:00',
+      };
+    } catch {
+      return {
+        utcOn: false,
+        utcMode: 'hourly',
+        utcTime: '09:00',
+        localOn: false,
+        localMode: 'hourly',
+        localTime: '09:00',
+      };
+    }
+  }
+
+  function saveAlertPrefsFromDom() {
+    try {
+      localStorage.setItem(
+        ALERT_PREFS_KEY,
+        JSON.stringify({
+          utcOn: $('alert-utc-on') && $('alert-utc-on').checked,
+          utcMode: ($('alert-utc-mode') && $('alert-utc-mode').value) || 'hourly',
+          utcTime: ($('alert-utc-time') && $('alert-utc-time').value) || '09:00',
+          localOn: $('alert-local-on') && $('alert-local-on').checked,
+          localMode: ($('alert-local-mode') && $('alert-local-mode').value) || 'hourly',
+          localTime: ($('alert-local-time') && $('alert-local-time').value) || '09:00',
+        })
+      );
+    } catch (_) {}
+  }
+
+  function bindAlerts() {
+    if (!$('alert-utc-on')) return;
+
+    const ap = loadAlertPrefs();
+    const uOn = $('alert-utc-on');
+    const uMode = $('alert-utc-mode');
+    const uTime = $('alert-utc-time');
+    const lOn = $('alert-local-on');
+    const lMode = $('alert-local-mode');
+    const lTime = $('alert-local-time');
+    if (uOn) uOn.checked = ap.utcOn;
+    if (uMode) uMode.value = ap.utcMode;
+    if (uTime) uTime.value = ap.utcTime;
+    if (lOn) lOn.checked = ap.localOn;
+    if (lMode) lMode.value = ap.localMode;
+    if (lTime) lTime.value = ap.localTime;
+    updateAlertTimeVisibility();
+    refreshAlertPermissionStatus();
+
+    function persistAlerts() {
+      saveAlertPrefsFromDom();
+      alertDedupe = { utcHour: '', utcAlarm: '', localHour: '', localAlarm: '' };
+    }
+
+    [uOn, uMode, uTime, lOn, lMode, lTime].forEach((el) => {
+      if (el) el.addEventListener('change', persistAlerts);
+    });
+    if (uMode) uMode.addEventListener('change', updateAlertTimeVisibility);
+    if (lMode) lMode.addEventListener('change', updateAlertTimeVisibility);
+
+    const btn = $('btn-alert-permission');
+    if (btn) {
+      btn.addEventListener('click', async () => {
+        if (typeof Notification === 'undefined') {
+          refreshAlertPermissionStatus();
+          return;
+        }
+        try {
+          await Notification.requestPermission();
+        } catch (_) {}
+        refreshAlertPermissionStatus();
+      });
+    }
   }
 
   function clearAllForms() {
@@ -498,6 +771,7 @@
     initTabs();
     populateTimezones(['tz-select', 'epoch-tz', 'period-tz']);
     bindPrefs();
+    bindAlerts();
     tickClocks();
     setInterval(tickClocks, 1000);
     setInterval(tickMsOnly, 100);
@@ -518,6 +792,8 @@
     [
       ['btn-copy-live-s', () => $('epoch-live-seconds').value],
       ['btn-copy-live-ms', () => $('epoch-live-ms').value],
+      ['btn-copy-live-s-local', () => $('epoch-live-seconds-local').value],
+      ['btn-copy-live-ms-local', () => $('epoch-live-ms-local').value],
     ].forEach(([id, fn]) => {
       const b = $(id);
       if (!b) return;
