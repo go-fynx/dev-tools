@@ -83,6 +83,38 @@ h1 {
   margin: 0 0 2rem;
 }
 
+/* ===== Brand / logo ===== */
+.site-title {
+  line-height: 0;
+}
+
+.site-title .site-logo {
+  display: block;
+  height: 2.75rem;
+  width: auto;
+  max-width: min(100%, 280px);
+}
+
+.nav-breadcrumb .breadcrumb-home {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+}
+
+.nav-breadcrumb .breadcrumb-home .nav-logo {
+  display: block;
+  height: 1.5rem;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  object-position: left center;
+  transition: opacity 0.2s;
+}
+
+.nav-breadcrumb .breadcrumb-home:hover .nav-logo {
+  opacity: 0.85;
+}
+
 /* ===== Navigation ===== */
 .nav-breadcrumb {
   display: flex;
