@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Build standard 5-field cron expressions and convert them to plain English. Client-side only.">
+  <title>Cron utilities | Dev Tools</title>
+  <link rel="icon" type="image/png" href="../dev-tools.png">
+  <link rel="apple-touch-icon" href="../dev-tools.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <div class="app-shell app-shell-wide" id="crons-hub">
+    <nav class="nav-breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html" class="breadcrumb-home"><img src="../dev-tools.png" alt="dev-tools" class="nav-logo" width="1536" height="1024"></a>
+      <span aria-hidden="true">/</span>
+      <span>Cron utilities</span>
+    </nav>
+
+    <h1>Cron utilities</h1>
+    <p class="page-subtitle">Standard five-field cron (minute, hour, day-of-month, month, day-of-week). Day-of-week uses 0 = Sunday … 6 = Saturday. All logic runs in your browser.</p>
+
+    <div class="tab-list" role="tablist" aria-label="Cron tools">
+      <button type="button" class="tab-btn" role="tab" data-tab-target="builder" aria-selected="true">Builder</button>
+      <button type="button" class="tab-btn" role="tab" data-tab-target="parser" aria-selected="false">Cron → human</button>
+      <button type="button" class="tab-btn" role="tab" data-tab-target="examples" aria-selected="false">API &amp; examples</button>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="builder" role="tabpanel" aria-hidden="false">
+      <section class="section">
+        <h2 class="section-title">Cron builder</h2>
+        <p class="fine-print">Pick a schedule type and fill the fields. The expression and a short description update as you go.</p>
+
+        <div class="form-group">
+          <label for="cron-schedule-type">Schedule type</label>
+          <select id="cron-schedule-type" aria-describedby="cron-builder-validation">
+            <option value="everyMinutes">Every N minutes</option>
+            <option value="hourly">Hourly</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+
+        <div id="cron-panel-every-minutes" class="cron-panel">
+          <div class="form-group">
+            <label for="cron-interval-minutes">Every N minutes (1–59)</label>
+            <input type="number" id="cron-interval-minutes" min="1" max="59" value="5" inputmode="numeric">
+          </div>
+        </div>
+
+        <div id="cron-panel-hourly" class="cron-panel" hidden>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cron-hourly-minute">At minute (0–59)</label>
+              <input type="number" id="cron-hourly-minute" min="0" max="59" value="0" inputmode="numeric">
+            </div>
+            <div class="form-group">
+              <label for="cron-hour-interval">Every N hours (1–23)</label>
+              <input type="number" id="cron-hour-interval" min="1" max="23" value="1" inputmode="numeric" title="Use 1 for each hour; 2 for every two hours, etc.">
+            </div>
+          </div>
+          <p class="fine-print">With <strong>Every N hours</strong> set to 1, the job runs at the chosen minute in every hour (same as classic “hourly”). Larger values use the hour column step (e.g. minute 0 every 2 hours → <code>0 */2 * * *</code>).</p>
+        </div>
+
+        <div id="cron-panel-daily" class="cron-panel" hidden>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cron-daily-hour">Hour (0–23)</label>
+              <input type="number" id="cron-daily-hour" min="0" max="23" value="9" inputmode="numeric">
+            </div>
+            <div class="form-group">
+              <label for="cron-daily-minute">Minute (0–59)</label>
+              <input type="number" id="cron-daily-minute" min="0" max="59" value="0" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+
+        <div id="cron-panel-weekly" class="cron-panel" hidden>
+          <div class="form-group">
+            <span class="label-like">Days of week</span>
+            <div class="cron-dow-grid" role="group" aria-label="Days of week">
+              <label class="checkbox-label cron-dow-item"><input type="checkbox" id="cron-dow-0" value="0"> Sun</label>
+              <label class="checkbox-label cron-dow-item"><input type="checkbox" id="cron-dow-1" value="1" checked> Mon</label>
+              <label class="checkbox-label cron-dow-item"><input type="checkbox" id="cron-dow-2" value="2"> Tue</label>
+              <label class="checkbox-label cron-dow-item"><input type="checkbox" id="cron-dow-3" value="3"> Wed</label>
+              <label class="checkbox-label cron-dow-item"><input type="checkbox" id="cron-dow-4" value="4"> Thu</label>
+              <label class="checkbox-label cron-dow-item"><input type="checkbox" id="cron-dow-5" value="5"> Fri</label>
+              <label class="checkbox-label cron-dow-item"><input type="checkbox" id="cron-dow-6" value="6"> Sat</label>
+            </div>
+            <div class="btn-group" style="margin-top: 0.75rem;">
+              <button type="button" id="btn-cron-weekdays" class="btn btn-secondary">Mon–Fri</button>
+              <button type="button" id="btn-cron-clear-dow" class="btn btn-secondary">Clear</button>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cron-weekly-hour">Hour (0–23)</label>
+              <input type="number" id="cron-weekly-hour" min="0" max="23" value="9" inputmode="numeric">
+            </div>
+            <div class="form-group">
+              <label for="cron-weekly-minute">Minute (0–59)</label>
+              <input type="number" id="cron-weekly-minute" min="0" max="59" value="0" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+
+        <div id="cron-panel-monthly" class="cron-panel" hidden>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cron-monthly-dom">Day of month (1–31)</label>
+              <input type="number" id="cron-monthly-dom" min="1" max="31" value="1" inputmode="numeric">
+            </div>
+            <div class="form-group">
+              <label for="cron-monthly-hour">Hour (0–23)</label>
+              <input type="number" id="cron-monthly-hour" min="0" max="23" value="9" inputmode="numeric">
+            </div>
+            <div class="form-group">
+              <label for="cron-monthly-minute">Minute (0–59)</label>
+              <input type="number" id="cron-monthly-minute" min="0" max="59" value="0" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+
+        <div id="cron-builder-validation" class="validation-msg" role="status" aria-live="polite"></div>
+
+        <div class="form-group" style="margin-top: 1rem;">
+          <label for="cron-out-expr">Cron expression</label>
+          <div class="output-row" style="margin-top: 0;">
+            <input type="text" id="cron-out-expr" readonly class="mono-out" aria-live="polite" autocomplete="off">
+            <button type="button" id="btn-copy-cron-expr" class="btn btn-secondary copy-btn">Copy</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="cron-out-human">Human-readable</label>
+          <input type="text" id="cron-out-human" readonly class="mono-out" aria-live="polite" autocomplete="off">
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="parser" role="tabpanel" aria-hidden="true">
+      <section class="section">
+        <h2 class="section-title">Cron → human</h2>
+        <p class="fine-print">Paste a five-field expression. Spaces separate fields; common patterns get a short English phrase.</p>
+        <div class="form-group">
+          <label for="cron-parse-input">Cron expression</label>
+          <input type="text" id="cron-parse-input" class="mono-out" placeholder="e.g. */5 * * * * or 0 9 * * 1" spellcheck="false" autocomplete="off">
+        </div>
+        <div id="cron-parse-validation" class="validation-msg" role="status" aria-live="polite"></div>
+        <div class="form-group">
+          <label for="cron-parse-human">Human-readable</label>
+          <div class="output-row" style="margin-top: 0;">
+            <input type="text" id="cron-parse-human" readonly class="mono-out" aria-live="polite" autocomplete="off">
+            <button type="button" id="btn-copy-cron-human" class="btn btn-secondary copy-btn">Copy</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="examples" role="tabpanel" aria-hidden="true">
+      <section class="section">
+        <h2 class="section-title">Programmatic API</h2>
+        <p class="fine-print">Functions live on <code>window.cronUtils</code> (see <code>js/cron-utils.js</code>).</p>
+        <pre class="cron-code-block"><code>// Weekly: Monday 09:00 → "0 9 * * 1"
+cronUtils.generateCron({
+  type: 'weekly',
+  day: [1, 2, 3, 4, 5],
+  hour: 9,
+  minute: 0
+});
+
+cronUtils.cronToHuman('*/5 * * * *');  // "Every 5 minutes"
+cronUtils.cronToHuman('0 9 * * 1');     // "Every Monday at 09:00"
+cronUtils.cronToHuman('30 14 * * *');   // "Every day at 14:30"</code></pre>
+      </section>
+    </div>
+  </div>
+
+  <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark/light mode">🌙</button>
+
+  <script src="../js/shared.js"></script>
+  <script src="../js/cron-utils.js"></script>
+  <script src="../js/crons-utilities-page.js"></script>
+  <script>
+    (function () {
+      initTheme();
+      const themeBtn = document.getElementById('theme-toggle');
+      if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+          const next = toggleTheme();
+          themeBtn.textContent = next === 'dark' ? '🌙' : '☀️';
+        });
+        themeBtn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '🌙' : '☀️';
+      }
+    })();
+  </script>
+</body>
+</html>
